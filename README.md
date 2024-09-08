@@ -2,6 +2,12 @@
     
 A lightweight rust library for periodically retrieving cryptocurrency prices from the ChainLink decentralized price feed. With `rustlink`, you can easily retrieve the latest price of any cryptocurrency supported by ChainLink. 
 
+[![crates.io](https://img.shields.io/crates/v/minismtp.svg)](https://crates.io/crates/rustlink)
+[![Documentation](https://docs.rs/rustlink/badge.svg)](https://docs.rs/rustlink)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![GitHub branch status](https://img.shields.io/github/checks-status/starkbamse/rustlink/main)
+
+
 ## Features
 - Retrieve the latest price of any cryptocurrency supported by ChainLink.
 - WASM-compatible, so you can use it in your web applications.

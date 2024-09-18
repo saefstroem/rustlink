@@ -1,13 +1,16 @@
 use crate::{error::Error, fetcher::fetch_rounds, interface};
 
 use async_std::channel::{unbounded, Receiver, RecvError, Sender};
-use ethers::{providers::{Http, Provider}, types::Address};
+use ethers::{
+    providers::{Http, Provider},
+    types::Address,
+};
 use js_sys::Function;
 use serde_wasm_bindgen::{from_value, to_value};
-use workflow_rs::core::cfg_if;
 use std::str::FromStr;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use wasm_bindgen_futures::spawn_local;
+use workflow_rs::core::cfg_if;
 
 /// ## Configuration
 /// This struct contains the configuration for Rustlink. It contains the following fields:
@@ -19,6 +22,7 @@ pub struct Configuration {
     pub fetch_interval_seconds: u64,
     pub contracts: Vec<(String, Address)>,
     pub provider: Provider<Http>,
+    pub call_timeout: std::time::Duration,
 }
 
 /// ## Rustlink instance. This is the main struct that you will interact with.
@@ -69,16 +73,16 @@ impl Rustlink {
     /// - `fetch_interval_seconds`: How often to update data points in the database (to prevent RPC rate limitation)
     /// - `reflector`: How you choose to receive the answer from your provided contracts.
     /// - `contracts`: A tuple list containing a ticker name and its corresponding contract address on the
-    /// EVM chain.
+    ///   EVM chain.
     ///
     /// Example:
     ///
     /// ```rust
     /// use async_std::channel::unbounded;
     /// use rustlink::core::{Reflector, Rustlink};
-    /// 
+    ///
     /// #[tokio::main]
-    /// 
+    ///
     /// async fn main(){
     ///     let mut contracts: Vec<(String, String)> = Vec::new();
     ///     contracts.push((
@@ -93,6 +97,7 @@ impl Rustlink {
     ///         1,
     ///         Reflector::Sender(sender),
     ///         contracts,
+    ///         std::time::Duration::from_secs(10),
     ///     )
     ///     .unwrap();
     ///     rustlink.start();
@@ -105,21 +110,28 @@ impl Rustlink {
         fetch_interval_seconds: u64,
         reflector: Reflector,
         contracts: Vec<(String, String)>,
+        call_timeout: std::time::Duration,
     ) -> Result<Self, Error> {
-
         let provider = Provider::try_from(rpc_url).expect("Invalid RPC URL");
         let (termination_send, termination_recv) = unbounded::<()>();
         let (shutdown_send, shutdown_recv) = unbounded::<()>();
 
-        let parsed_contracts=contracts.iter().map(|(identifier, address)| {
-            (identifier.clone(), Address::from_str(address).expect("Invalid contract address specified"))
-        }).collect();
+        let parsed_contracts = contracts
+            .iter()
+            .map(|(identifier, address)| {
+                (
+                    identifier.clone(),
+                    Address::from_str(address).expect("Invalid contract address specified"),
+                )
+            })
+            .collect();
 
         Ok(Rustlink {
             configuration: Configuration {
                 fetch_interval_seconds,
                 provider,
-                contracts:parsed_contracts,
+                contracts: parsed_contracts,
+                call_timeout,
             },
             reflector,
             termination_send,
@@ -130,7 +142,7 @@ impl Rustlink {
     }
 
     /// Starts the Rustlink instance.
-    /// This method will start fetching the latest price data from the Chainlink decentralized data feed. 
+    /// This method will start fetching the latest price data from the Chainlink decentralized data feed.
     pub fn start(&self) {
         #[cfg(not(target_arch = "wasm32"))]
         tokio::task::spawn(fetch_rounds(self.clone()));
@@ -227,17 +239,21 @@ impl RustlinkJS {
         contracts: Contracts,
         callback: Function,
     ) -> Self {
-
-        
         // Cast `JsValue` to `Function`
 
         let contracts: Vec<(String, String)> = from_value(contracts.into()).unwrap();
 
         let (sender, receiver) = async_std::channel::unbounded();
         let reflector = Reflector::Sender(sender);
-        let rustlink = Rustlink::try_new(rpc_url, fetch_interval_seconds, reflector, contracts)
-            .map_err(|e| JsValue::from_str(&format!("{}", e)))
-            .unwrap();
+        let rustlink = Rustlink::try_new(
+            rpc_url,
+            fetch_interval_seconds,
+            reflector,
+            contracts,
+            std::time::Duration::from_secs(10),
+        )
+        .map_err(|e| JsValue::from_str(&format!("{}", e)))
+        .unwrap();
 
         RustlinkJS {
             rustlink,

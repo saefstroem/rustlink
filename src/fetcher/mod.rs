@@ -1,22 +1,28 @@
 use std::time::Duration;
 
 use async_std::stream::StreamExt;
-use ethers::abi::AbiError;
+use ethers::providers::{Http, Provider};
 use ethers::types::Address;
 use futures::{select, FutureExt};
 
 use super::interface::{ChainlinkContract, Round};
 use crate::core::Reflector::Sender;
 use crate::core::{Configuration, Rustlink};
+use crate::interface::ContractCallError;
 
 /// Retrieves the price of an underlying asset from a particular contract
-async fn fetch_round_data_for_contract(
-    rustlink_configuration: &Configuration,
-    identifier: &str,
+async fn fetch_round_data_for_contract<'a>(
+    rustlink_configuration: &'a Configuration,
+    identifier: &'a str,
     address: Address,
-) -> Result<Round, AbiError> {
-    let contract =
-        ChainlinkContract::new(&rustlink_configuration.provider, identifier, address).await?;
+) -> Result<Round, ContractCallError<&'a Provider<Http>>> {
+    let contract = ChainlinkContract::new(
+        &rustlink_configuration.provider,
+        identifier,
+        address,
+        rustlink_configuration.call_timeout,
+    )
+    .await?;
     contract.latest_round_data().await
 }
 

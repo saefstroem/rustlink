@@ -203,6 +203,7 @@ impl RustlinkJS {
     /// - `fetch_interval_seconds`: How often to update data points (to prevent RPC rate limitation)
     /// - `contracts`: A list of tuples containing a ticker name and its corresponding contract address on the EVM chain
     /// - `callback`: A JavaScript function (async or sync) that will be called every time a new data point is fetched
+    /// - `call_timeout_seconds`: The timeout for each contract call in seconds
     /// ```javascript
     /// import init, { RustlinkJS } from '../web/rustlink.js';
     ///
@@ -221,7 +222,7 @@ impl RustlinkJS {
     ///        console.log("Callback received:", roundData);
     ///    }
     ///
-    ///    let rustlink = new RustlinkJS(rpcUrl, fetchIntervalSeconds, contracts, callback);
+    ///    let rustlink = new RustlinkJS(rpcUrl, fetchIntervalSeconds, contracts, callback, 10);
     ///
     ///    rustlink.start();
     ///    console.log("Stopping after 5 seconds");
@@ -238,6 +239,7 @@ impl RustlinkJS {
         fetch_interval_seconds: u64,
         contracts: Contracts,
         callback: Function,
+        call_timeout_seconds: u64,
     ) -> Self {
         // Cast `JsValue` to `Function`
 
@@ -250,7 +252,7 @@ impl RustlinkJS {
             fetch_interval_seconds,
             reflector,
             contracts,
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(call_timeout_seconds),
         )
         .map_err(|e| JsValue::from_str(&format!("{}", e)))
         .unwrap();

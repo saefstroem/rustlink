@@ -73,13 +73,15 @@ Here is a simple example of how you can use `rustlink` to retrieve the latest pr
 
 ```rust
 use async_std::channel::unbounded;
-use rustlink::config::{Reflector, Rustlink};
+use rustlink::core::{Reflector, Rustlink};
 
 #[tokio::main]
+
 async fn main(){
     let mut contracts: Vec<(String, String)> = Vec::new();
     contracts.push((
-        "ETH".to_string(),"0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e".to_string(),
+        "ETH".to_string(),
+        "0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e".to_string(),
     ));
     
     let (sender, receiver) = unbounded();
@@ -89,6 +91,7 @@ async fn main(){
         1,
         Reflector::Sender(sender),
         contracts,
+        std::time::Duration::from_secs(10),
     )
     .unwrap();
     rustlink.start();
@@ -107,33 +110,35 @@ loop {
 ```
 
 ## WASM Usage
-
 ```javascript
 import init, { RustlinkJS } from '../web/rustlink.js';
 
 async function runWasm() {
-   await init(); // Initialize the wasm module
+    await init(); // Initialize the wasm module
 
-   // Example data
-   const rpcUrl = "https://bsc-dataseed1.binance.org/";
-   const fetchIntervalSeconds = BigInt(1);
-   const contracts = [
-       ["ETH", "0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e"],
-       ["1INCH", "0x9a177Bb9f5b6083E962f9e62bD21d4b5660Aeb03"],
-   ];
+    // Example data
+    const rpcUrl = "https://bsc-dataseed1.binance.org/";
+    const fetchIntervalSeconds = BigInt(1);
+    const contracts = [
+        ["ETH", "0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e"],
+        ["1INCH", "0x9a177Bb9f5b6083E962f9e62bD21d4b5660Aeb03"],
+    ];
 
-   async function callback(roundData) {
-       console.log("Callback received:", roundData);
-   }
+    async function callback(roundData) {
+        console.log("Callback received:", roundData);
+    }
 
-   let rustlink = new RustlinkJS(rpcUrl, fetchIntervalSeconds, contracts, callback);
+    let rustlink = new RustlinkJS(rpcUrl, fetchIntervalSeconds, contracts, callback, 10);
 
-   rustlink.start();
-   console.log("Stopping after 5 seconds");
-   setTimeout(() => {
-       rustlink.stop();
-   }, 5000);
+    rustlink.start();
+    console.log("Stopping after 5 seconds");
+    setTimeout(() => {
+        rustlink.stop();
+    }, 5000);
 }
 
 runWasm();
 ```
+
+## License
+This library is licensed under the MIT license. See the [LICENSE](LICENSE) file for more details.

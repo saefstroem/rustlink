@@ -5,7 +5,7 @@ A lightweight rust library for periodically retrieving cryptocurrency prices fro
 [![crates.io](https://img.shields.io/crates/v/rustlink.svg)](https://crates.io/crates/rustlink)
 [![Documentation](https://docs.rs/rustlink/badge.svg)](https://docs.rs/rustlink)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![GitHub branch status](https://img.shields.io/github/checks-status/starkbamse/rustlink/main)
+![GitHub branch status](https://img.shields.io/github/checks-status/saefstroem/rustlink/main)
 
 
 ## Features
@@ -34,7 +34,7 @@ To use `rustlink` in your project, add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-rustlink = "0.0.3"
+rustlink = "0.0.4"
 ```
 
 ## Build for WASM
